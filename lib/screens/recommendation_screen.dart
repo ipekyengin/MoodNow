@@ -2,9 +2,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/mood_provider.dart';
-import '../providers/watchlist_provider.dart';
+import '../providers/library_provider.dart';
+import '../providers/auth_provider.dart';
 import '../utils/constants.dart';
-import 'watchlist_screen.dart';
 
 class RecommendationScreen extends StatelessWidget {
   const RecommendationScreen({super.key});
@@ -113,6 +113,15 @@ class RecommendationScreen extends StatelessWidget {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
+                            const SizedBox(width: 10),
+                            Text(
+                              movie.mediaType.toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.grey,
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 16),
@@ -140,29 +149,76 @@ class RecommendationScreen extends StatelessWidget {
                     FloatingActionButton(
                       heroTag: 'reject',
                       backgroundColor: Colors.white12,
-                      onPressed: () {
-                        provider.nextMovie();
-                      },
+                      onPressed: () => provider.nextMovie(),
                       child: const Icon(
                         Icons.close,
                         color: Colors.redAccent,
                         size: 30,
                       ),
                     ),
-                    FloatingActionButton(
-                      heroTag: 'accept',
-                      backgroundColor: Colors.redAccent,
-                      onPressed: () {
-                        Provider.of<WatchlistProvider>(
-                          context,
-                          listen: false,
-                        ).addToWatchlist(movie);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('${movie.title} added to watchlist!'),
+
+                    // Favorite Toggle
+                    Consumer<LibraryProvider>(
+                      builder: (context, libProvider, _) {
+                        final isFav = libProvider.isFavorite(movie);
+                        return FloatingActionButton(
+                          heroTag: 'fav',
+                          backgroundColor: Colors.white,
+                          onPressed: () async {
+                            final auth = Provider.of<AuthProvider>(
+                              context,
+                              listen: false,
+                            ).currentUser;
+                            if (auth != null) {
+                              await libProvider.toggleFavorite(
+                                auth.username,
+                                movie,
+                              );
+                            }
+                          },
+                          child: Icon(
+                            isFav ? Icons.favorite : Icons.favorite_border,
+                            color: isFav ? Colors.red : Colors.black,
+                            size: 30,
                           ),
                         );
-                        createWatchlistRoute(context);
+                      },
+                    ),
+
+                    FloatingActionButton(
+                      heroTag: 'accept',
+                      backgroundColor: Colors.purpleAccent,
+                      onPressed: () async {
+                        final authProvider = Provider.of<AuthProvider>(
+                          context,
+                          listen: false,
+                        );
+                        final username = authProvider.currentUser?.username;
+
+                        if (username != null) {
+                          final targetList = movie.mediaType == 'movie'
+                              ? 'Movies'
+                              : 'Series';
+                          await Provider.of<LibraryProvider>(
+                            context,
+                            listen: false,
+                          ).addToList(username, movie, targetList);
+
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Added to library!'),
+                              ),
+                            );
+                            provider.nextMovie();
+                          }
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please login to save movies'),
+                            ),
+                          );
+                        }
                       },
                       child: const Icon(
                         Icons.check,
@@ -177,13 +233,6 @@ class RecommendationScreen extends StatelessWidget {
           );
         },
       ),
-    );
-  }
-
-  void createWatchlistRoute(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const WatchlistScreen()),
     );
   }
 }

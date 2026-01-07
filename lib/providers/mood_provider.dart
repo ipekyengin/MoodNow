@@ -64,7 +64,7 @@ class MoodProvider with ChangeNotifier {
       // We loop until we find a valid movie or run out of titles
       while (_pendingTitles.isNotEmpty) {
         final title = _pendingTitles.removeAt(0);
-        final movie = await _tmdbService.searchMovie(title);
+        final movie = await _tmdbService.searchBestMatch(title);
 
         if (movie != null) {
           _currentMovie = movie;

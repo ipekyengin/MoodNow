@@ -7,41 +7,47 @@ class TmdbService {
   final Dio _dio = Dio();
   final String? _apiKey = dotenv.env['TMDB_API_KEY'];
 
-  Future<Movie?> searchMovie(String title) async {
+  Future<List<Movie>> searchMoviesAndSeries(String query) async {
     if (_apiKey == null) throw Exception('TMDB_API_KEY not found');
+    if (query.trim().isEmpty) return [];
 
     try {
       final response = await _dio.get(
         '${AppConstants.tmdbBaseUrl}/search/multi',
         queryParameters: {
           'api_key': _apiKey,
-          'query': title,
-          'language': 'en-US', // Or make it configurable
+          'query': query,
+          'language': 'en-US',
           'page': 1,
+          'include_adult': false,
         },
       );
 
       if (response.statusCode == 200) {
         final List results = response.data['results'];
-        if (results.isNotEmpty) {
-          // Filter out people, only keep movies or tv shows with posters ideally
-          final movieData = results.firstWhere(
-            (item) =>
-                item['media_type'] != 'person' && item['poster_path'] != null,
-            orElse: () => null,
-          );
-
-          if (movieData != null) {
-            // Adjust title/name field (TMDB uses 'name' for TV, 'title' for Movie)
-            movieData['title'] = movieData['title'] ?? movieData['name'];
-            return Movie.fromJson(movieData);
-          }
-        }
+        return results
+            .where((item) {
+              final mediaType = item['media_type'];
+              final hasPoster = item['poster_path'] != null;
+              // Ensure we only process 'movie' or 'tv' types
+              return (mediaType == 'movie' || mediaType == 'tv') && hasPoster;
+            })
+            .map((item) => Movie.fromJson(item))
+            .toList();
       }
-      return null;
+      return [];
     } catch (e) {
       print('TMDB Search Error: $e');
-      return null; // Don't crash, just return null if not found
+      return [];
     }
+  }
+
+  // Used by Gemini Service to find a specific title's details
+  Future<Movie?> searchBestMatch(String title) async {
+    final results = await searchMoviesAndSeries(title);
+    if (results.isNotEmpty) {
+      return results.first;
+    }
+    return null;
   }
 }
