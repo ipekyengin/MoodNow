@@ -1,35 +1,75 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
+  // Netflix Palette
+  static const Color background = Color(0xFF000000); // Solid Black
+  static const Color surface = Color(0xFF191919); // Dark Grey Surface
+  static const Color primary = Color(0xFFE50914); // Netflix Red
+  static const Color accent = Color(0xFFB71C1C); // Darker Red for gradients
+  static const Color textPrimary = Color(0xFFFFFFFF);
+  static const Color textSecondary = Color(0xFFB3B3B3); // Netflix Grey Text
+
   static final ThemeData darkTheme = ThemeData(
+    useMaterial3: true,
     brightness: Brightness.dark,
-    primaryColor: Colors.redAccent,
-    scaffoldBackgroundColor: const Color(0xFF141414), // Netflix-like background
+    scaffoldBackgroundColor: background,
+    primaryColor: primary,
+
+    // Text Theme (Poppins)
+    textTheme: GoogleFonts.poppinsTextTheme(
+      ThemeData.dark().textTheme,
+    ).apply(bodyColor: textPrimary, displayColor: textPrimary),
+
+    colorScheme: const ColorScheme.dark(
+      primary: primary,
+      secondary: primary, // Accent is also red usually
+      surface: surface,
+      background: background,
+      onSurface: textPrimary,
+    ),
+
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.transparent,
       elevation: 0,
-    ),
-    colorScheme: const ColorScheme.dark(
-      primary: Colors.redAccent,
-      secondary: Colors.white,
-      surface: Color(0xFF2A2A2A),
-    ),
-    textTheme: const TextTheme(
-      displayLarge: TextStyle(
-        fontSize: 32,
+      centerTitle: false,
+      titleTextStyle: TextStyle(
+        fontSize: 24,
         fontWeight: FontWeight.bold,
-        color: Colors.white,
+        color: textPrimary,
       ),
-      bodyLarge: TextStyle(fontSize: 16, color: Colors.white70),
     ),
+
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: const Color(0xFF333333),
+      fillColor: surface,
+      contentPadding: const EdgeInsets.all(16),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(4), // 4px rounding
         borderSide: BorderSide.none,
       ),
-      hintStyle: const TextStyle(color: Colors.white54),
+      hintStyle: const TextStyle(color: textSecondary),
+      prefixIconColor: textSecondary,
+    ),
+
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: primary,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(4), // 4px rounding
+        ),
+        textStyle: const TextStyle(fontWeight: FontWeight.bold),
+      ),
+    ),
+
+    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      backgroundColor: background,
+      selectedItemColor: primary,
+      unselectedItemColor: textSecondary,
+      type: BottomNavigationBarType.fixed,
+      showUnselectedLabels: true,
     ),
   );
 }

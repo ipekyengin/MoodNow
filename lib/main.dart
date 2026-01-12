@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
+import 'providers/movie_provider.dart';
 import 'providers/mood_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/library_provider.dart';
@@ -30,6 +31,7 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(create: (_) => LibraryProvider()),
         ChangeNotifierProvider(create: (_) => MoodProvider()),
+        ChangeNotifierProvider(create: (_) => MovieProvider()),
       ],
       child: Consumer<AuthProvider>(
         builder: (context, authProvider, _) {

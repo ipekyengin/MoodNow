@@ -83,10 +83,19 @@ class LibraryProvider extends ChangeNotifier {
   ) async {
     if (_allLists.containsKey(listName)) {
       _allLists[listName]!.removeWhere((m) => m.id == movie.id);
+
+      // If we are removing from Favorites, we must update the isFavorite flag
+      // for this movie in ALL other lists (Movies, Series, Watchlist, etc.)
       if (listName == 'Favorites') {
-        // We might want to update the isFavorite flag in other lists too,
-        // but for now simplistic approach
+        _allLists.forEach((key, list) {
+          for (var m in list) {
+            if (m.id == movie.id) {
+              m.isFavorite = false;
+            }
+          }
+        });
       }
+
       await _save(username);
     }
   }
@@ -121,5 +130,27 @@ class LibraryProvider extends ChangeNotifier {
 
   bool isFavorite(Movie movie) {
     return _allLists['Favorites']?.any((m) => m.id == movie.id) ?? false;
+  }
+
+  Future<void> saveNote(String username, Movie movie, String note) async {
+    bool foundStr = false;
+    // Update in all lists where it exists
+    _allLists.forEach((key, list) {
+      for (var m in list) {
+        if (m.id == movie.id) {
+          m.userNote = note;
+          foundStr = true;
+        }
+      }
+    });
+
+    if (!foundStr) {
+      // If not in any list, add to auto-category so it's saved
+      movie.userNote = note;
+      _addToAutoCategory(movie);
+    }
+
+    await _save(username);
+    notifyListeners();
   }
 }
