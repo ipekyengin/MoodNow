@@ -146,14 +146,6 @@ class _HomeScreenState extends State<HomeScreen>
         ),
         backgroundColor: Colors.black.withOpacity(0.5),
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.cast),
-            onPressed: () {},
-            color: Colors.white,
-          ),
-          const SizedBox(width: 10),
-        ],
       ),
       body: Consumer<MovieProvider>(
         builder: (context, movieProvider, child) {

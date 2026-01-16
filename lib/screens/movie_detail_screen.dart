@@ -59,6 +59,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         builder: (context, libProvider, _) {
           final movie = _getLatestMovie(libProvider);
           final isFav = libProvider.isFavorite(movie);
+          final isInWatchList = libProvider.isInWatchList(movie);
 
           // If note exists but controller is empty (first load mismatch), sync it
           if (!_isEditing &&
@@ -171,18 +172,22 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                         ),
                         const SizedBox(height: 24),
 
-                        // Buttons Row with Note Shortcut
+                        // Buttons Row: My List, Favorite, Notes
                         Row(
                           children: [
+                            // MY LIST BUTTON (Watchlist)
                             Expanded(
                               child: ElevatedButton.icon(
                                 icon: Icon(
-                                  isFav ? Icons.check : Icons.add,
+                                  isInWatchList ? Icons.check : Icons.add,
                                   color: Colors.white,
                                 ),
-                                label: Text(isFav ? "My List" : "My List"),
+                                label: Text(
+                                  isInWatchList ? "✓ In My List" : "+ My List",
+                                  style: const TextStyle(color: Colors.white),
+                                ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: isFav
+                                  backgroundColor: isInWatchList
                                       ? Colors.grey[800]
                                       : AppTheme.primary,
                                   shape: RoundedRectangleBorder(
@@ -192,16 +197,40 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                     vertical: 14,
                                   ),
                                 ),
+                                onPressed: () => _toggleWatchList(
+                                  context,
+                                  libProvider,
+                                  movie,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            // FAVORITE HEART ICON
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey[800],
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: IconButton(
                                 onPressed: () => _toggleFavorite(
                                   context,
                                   libProvider,
                                   movie,
                                   isFav,
                                 ),
+                                icon: Icon(
+                                  isFav
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  color: isFav ? Colors.red : Colors.white,
+                                ),
+                                tooltip: isFav
+                                    ? "Remove from Favorites"
+                                    : "Add to Favorites",
                               ),
                             ),
                             const SizedBox(width: 12),
-                            // Accessibility: Note Shortcut
+                            // NOTE SHORTCUT BUTTON
                             Container(
                               decoration: BoxDecoration(
                                 color: Colors.grey[800],
@@ -425,8 +454,33 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isFav ? "Removed from My List" : "Added to My List"),
-            backgroundColor: isFav ? Colors.grey : AppTheme.primary,
+            content: Text(
+              isFav ? "Removed from Favorites" : "Added to Favorites",
+            ),
+            backgroundColor: isFav ? Colors.grey : Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _toggleWatchList(
+    BuildContext context,
+    LibraryProvider libProvider,
+    Movie movie,
+  ) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final username = authProvider.currentUser?.username;
+    if (username != null) {
+      final wasInList = libProvider.isInWatchList(movie);
+      await libProvider.toggleWatchList(username, movie);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              wasInList ? "Removed from My List" : "Added to My List",
+            ),
+            backgroundColor: wasInList ? Colors.grey : AppTheme.primary,
           ),
         );
       }

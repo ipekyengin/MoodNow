@@ -100,18 +100,43 @@ class LibraryProvider extends ChangeNotifier {
     }
   }
 
+  /// Toggle movie in/out of Favorites list ONLY (independent of watchlist)
   Future<void> toggleFavorite(String username, Movie movie) async {
     final isFav = _allLists['Favorites']!.any((m) => m.id == movie.id);
+
     if (isFav) {
+      // REMOVE from Favorites only
       await removeFromList(username, movie, 'Favorites');
       movie.isFavorite = false;
     } else {
+      // ADD to Favorites only (without adding to watchlist)
       await addToList(username, movie, 'Favorites');
       movie.isFavorite = true;
     }
-    // Also ensure auto-cat
-    _addToAutoCategory(movie);
+
     await _save(username);
+  }
+
+  /// Toggle movie in/out of watchlist (Movies/Series) ONLY (independent of Favorites)
+  Future<void> toggleWatchList(String username, Movie movie) async {
+    // Determine which watchlist to check
+    final targetList = movie.mediaType == 'tv' ? 'Series' : 'Movies';
+    final isInList = _allLists[targetList]!.any((m) => m.id == movie.id);
+
+    if (isInList) {
+      // REMOVE from watchlist only
+      await removeFromList(username, movie, targetList);
+    } else {
+      // ADD to watchlist only (without adding to Favorites)
+      _addToAutoCategory(movie);
+      await _save(username);
+    }
+  }
+
+  /// Check if movie is in watchlist (Movies or Series)
+  bool isInWatchList(Movie movie) {
+    final targetList = movie.mediaType == 'tv' ? 'Series' : 'Movies';
+    return _allLists[targetList]?.any((m) => m.id == movie.id) ?? false;
   }
 
   Future<void> createCustomList(String username, String listName) async {
